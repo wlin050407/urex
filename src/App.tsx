@@ -4,7 +4,7 @@ import Earth from './components/Earth'
 import ECIAxes from './components/ECIAxes'
 import TimeControlPanel from './components/TimeControlPanel'
 import { TranslationProvider } from './i18n/useTranslation'
-import { SunDirectionTest } from './components/SunDirectionTest'
+// import { SunDirectionTest } from './components/SunDirectionTest'
 
 function App() {
   return (
@@ -16,7 +16,7 @@ function App() {
         </div>
         
         {/* 太阳方向测试面板 */}
-        <SunDirectionTest />
+        {/* <SunDirectionTest /> */}
         <Canvas
           camera={{ position: [20, 10, 20], fov: 60 }}
           style={{ background: '#000011' }}
