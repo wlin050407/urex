@@ -8,7 +8,7 @@ import { sunDirectionService } from '../utils/sunDirectionService'
 
 // NASA Blue Marble 贴图
 const DAY_TEXTURE = 'https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg'
-const NIGHT_TEXTURE = '/Earth/night.jpg'
+const NIGHT_TEXTURE = import.meta.env.BASE_URL + 'Earth/night.jpg'
 const CLOUD_TEXTURE = 'https://threejs.org/examples/textures/planets/earth_clouds_1024.png'
 
 const vertexShader = `
