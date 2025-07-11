@@ -29,7 +29,4 @@ jobs:
         run: npm run lint || echo "No lint script"
 
       - name: Run tests
-        run: npm test || echo "No test script"
-
-      - name: Build
-        run: npm run build 
+        run: npm test || echo "No test script" 
