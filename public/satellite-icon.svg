@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- 地球背景 -->
+  <circle cx="32" cy="32" r="28" fill="#1e3a8a" stroke="#3b82f6" stroke-width="2"/>
+  
+  <!-- 地球表面纹理 -->
+  <path d="M8 32c0-8 4-15 8-20 4 5 8 12 8 20s-4 15-8 20c-4-5-8-12-8-20z" fill="#22c55e" opacity="0.3"/>
+  <path d="M56 32c0 8-4 15-8 20-4-5-8-12-8-20s4-15 8-20c4 5 8 12 8 20z" fill="#22c55e" opacity="0.3"/>
+  
+  <!-- 卫星主体 -->
+  <rect x="28" y="12" width="8" height="6" rx="2" fill="#fbbf24" transform="rotate(15 32 15)"/>
+  
+  <!-- 卫星太阳能板 -->
+  <rect x="20" y="14" width="6" height="2" rx="1" fill="#f59e0b" transform="rotate(15 23 15)"/>
+  <rect x="38" y="14" width="6" height="2" rx="1" fill="#f59e0b" transform="rotate(15 41 15)"/>
+  
+  <!-- 卫星轨道线 -->
+  <ellipse cx="32" cy="32" rx="24" ry="20" fill="none" stroke="#fbbf24" stroke-width="1.5" stroke-dasharray="3,3" opacity="0.8"/>
+  
+  <!-- 轨道上的小点 -->
+  <circle cx="8" cy="32" r="1.5" fill="#fbbf24"/>
+  <circle cx="56" cy="32" r="1.5" fill="#fbbf24"/>
+  <circle cx="32" cy="12" r="1.5" fill="#fbbf24"/>
+  <circle cx="32" cy="52" r="1.5" fill="#fbbf24"/>
+  
+  <!-- 星星装饰 -->
+  <circle cx="12" cy="8" r="0.8" fill="#ffffff"/>
+  <circle cx="52" cy="8" r="0.8" fill="#ffffff"/>
+  <circle cx="12" cy="56" r="0.8" fill="#ffffff"/>
+  <circle cx="52" cy="56" r="0.8" fill="#ffffff"/>
+  <circle cx="48" cy="20" r="0.6" fill="#ffffff"/>
+  <circle cx="16" cy="44" r="0.6" fill="#ffffff"/>
+</svg>
