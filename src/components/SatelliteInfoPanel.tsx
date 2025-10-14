@@ -30,7 +30,7 @@ const GlobeIcon: React.FC<{ size?: number }> = ({ size = 80 }) => (
 )
 
 // Star icon component for favorites
-const StarIcon: React.FC<{ filled?: boolean; onClick?: () => void; size?: number }> = ({ 
+const StarIcon: React.FC<{ filled?: boolean; onClick?: (e: React.MouseEvent) => void; size?: number }> = ({ 
   filled = false, 
   onClick, 
   size = 16 
@@ -158,7 +158,7 @@ const SatelliteInfoPanel: React.FC = () => {
       const satrec = satellite.twoline2satrec(tle.line1, tle.line2)
       const positionAndVelocity = satellite.propagate(satrec, time)
 
-      if (positionAndVelocity.position && typeof positionAndVelocity.position !== 'boolean') {
+      if (positionAndVelocity && positionAndVelocity.position && typeof positionAndVelocity.position !== 'boolean') {
         const positionEci = positionAndVelocity.position
         const gmst = satellite.gstime(time)
         const positionGd = satellite.eciToGeodetic(positionEci, gmst)
@@ -230,7 +230,7 @@ const SatelliteInfoPanel: React.FC = () => {
   }
 
   // Handle satellite selection
-  const handleSelectSatellite = (key: string, sat: SatelliteData) => {
+  const handleSelectSatellite = (key: string, _sat: SatelliteData) => {
     setSelectedSatellite(key)
   }
 
@@ -425,7 +425,7 @@ const SatelliteInfoPanel: React.FC = () => {
                   {followedSatellite === selectedSatellite ? '✓ ' : ''}{t.follow}
                 </button>
                 <button 
-                  className={`action-btn orbit-btn ${visibleOrbits.includes(selectedSatellite) ? 'active' : ''}`}
+                  className={`action-btn orbit-btn ${selectedSatellite && visibleOrbits.includes(selectedSatellite) ? 'active' : ''}`}
                   onClick={handleToggleOrbit}
                 >
                   {t.toggleOrbit}

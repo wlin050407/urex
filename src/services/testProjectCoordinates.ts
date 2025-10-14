@@ -7,7 +7,7 @@ import {
   TLEPropagator, 
   calculateSatelliteProjectPosition,
   calculateSatelliteProjectCoordinates,
-  ProjectSatelliteState 
+  // ProjectSatelliteState 
 } from './tlePropagator';
 import { TLEData } from './celestrakService';
 

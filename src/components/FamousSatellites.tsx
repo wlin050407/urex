@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { Line } from '@react-three/drei'
+// import { Line } from '@react-three/drei'
 import * as THREE from 'three'
 import { useAppStore } from '../store/appStore'
 import { getFamousSatellitesTLE, FAMOUS_SATELLITES } from '../services/celestrakService'
@@ -9,7 +9,7 @@ import * as satelliteJS from 'satellite.js'
 
 const EARTH_RADIUS_KM = 6378.137
 const SCENE_RADIUS = 5 // must match Earth sphere radius
-const ORBIT_POINTS = 256 // 增加轨道点数确保闭合
+// const ORBIT_POINTS = 256 // 增加轨道点数确保闭合
 
 // 弧线插值函数，用于拟合缺失的轨道点
 function interpolateArcPoints(points: THREE.Vector3[], targetCount: number): THREE.Vector3[] {
@@ -56,7 +56,7 @@ function fillMissingPointsWithPreviousOrbit(
   // 将上一圈的数据按比例混合到当前轨道中
   const result: THREE.Vector3[] = []
   const currentRatio = currentPoints.length / targetCount
-  const previousRatio = 1 - currentRatio
+  // const previousRatio = 1 - currentRatio
   
   for (let i = 0; i < targetCount; i++) {
     const currentIndex = Math.floor((i / targetCount) * currentPoints.length)
@@ -89,7 +89,7 @@ const CurveLine: React.FC<{
   transparent: boolean
   opacity: number
 }> = ({ points, color, lineWidth, transparent, opacity }) => {
-  const curveRef = useRef<THREE.Mesh>(null)
+  // const curveRef = useRef<THREE.Mesh>(null)
   
   const curveGeometry = useMemo(() => {
     if (points.length < 3) return null
@@ -121,7 +121,7 @@ const CurveLine: React.FC<{
   if (!curveGeometry) return null
   
   return (
-    <line ref={curveRef} geometry={curveGeometry} material={curveMaterial} />
+    <primitive object={new THREE.Line(curveGeometry, curveMaterial)} />
   )
 }
 
@@ -333,7 +333,7 @@ const FamousSatellites: React.FC = () => {
       }
       
       try {
-        const points: THREE.Vector3[] = []
+        // const points: THREE.Vector3[] = []
         
         // 使用开普勒轨道力学正确计算轨道
         // 计算轨道周期（分钟）

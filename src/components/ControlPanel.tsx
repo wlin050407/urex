@@ -13,10 +13,7 @@ const ControlPanel: React.FC = () => {
     followEarthRotation,
     setFollowEarthRotation,
     useRealScale,
-    setUseRealScale,
-
-    timeSpeed,
-    isTimeCustom
+    setUseRealScale
   } = useAppStore()
 
   const handleResetScene = () => {

@@ -15,9 +15,9 @@ const EARTH_OMEGA = 7.2921151467e-5; // 地球自转角速度 (rad/s)
 
 // 项目坐标系常量
 const PROJECTION_SCALE = 5.0 / EARTH_RADIUS; // 项目地球半径5单位对应真实地球半径
-const PROJECTION_ECI_X = [1, 0, 0]; // 项目ECI X轴方向（太阳方向）
-const PROJECTION_ECI_Y = [0, 0, 1]; // 项目ECI Y轴方向（注意：与标准ECI不同）
-const PROJECTION_ECI_Z = [0, 1, 0]; // 项目ECI Z轴方向（注意：与标准ECI不同）
+// const PROJECTION_ECI_X = [1, 0, 0]; // 项目ECI X轴方向（太阳方向）
+// const PROJECTION_ECI_Y = [0, 0, 1]; // 项目ECI Y轴方向（注意：与标准ECI不同）
+// const PROJECTION_ECI_Z = [0, 1, 0]; // 项目ECI Z轴方向（注意：与标准ECI不同）
 
 // 轨道类型判断阈值
 const DEEP_SPACE_THRESHOLD = 0.99; // 深空轨道阈值
@@ -244,6 +244,7 @@ export class TLEPropagator {
   /**
    * 将项目坐标系转换为标准ECI坐标
    */
+  /*
   private convertFromProjectCoordinates(projectPosition: [number, number, number]): [number, number, number] {
     const [x, y, z] = projectPosition;
     
@@ -254,6 +255,7 @@ export class TLEPropagator {
       y / PROJECTION_SCALE            // 标准ECI Z轴
     ];
   }
+  */
 
   /**
    * 将ECI坐标转换为ECF坐标
@@ -350,8 +352,8 @@ export class TLEPropagator {
    * 将日期转换为儒略日
    */
   private dateToJulianDay(date: Date): number {
-    const year = date.getUTCFullYear();
-    const month = date.getUTCMonth() + 1;
+    let year = date.getUTCFullYear();
+    let month = date.getUTCMonth() + 1;
     const day = date.getUTCDate();
     const hour = date.getUTCHours();
     const minute = date.getUTCMinutes();
@@ -395,7 +397,7 @@ export class TLEPropagator {
   /**
    * 计算卫星可见性（简化版）
    */
-  calculateVisibility(geographicCoords: GeographicCoordinates, observerLat: number, observerLon: number, observerAlt: number = 0): boolean {
+  calculateVisibility(geographicCoords: GeographicCoordinates, observerLat: number, observerLon: number, _observerAlt: number = 0): boolean {
     // 简化的可见性计算
     const lat1 = observerLat * Math.PI / 180;
     const lon1 = observerLon * Math.PI / 180;

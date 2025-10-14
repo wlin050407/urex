@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
-import { Line } from '@react-three/drei'
+// import { Line } from '@react-three/drei'
 import * as THREE from 'three'
 import { useAppStore } from '../store/appStore'
 import { getTargetSatelliteTLE } from '../services/celestrakService'
@@ -9,7 +9,7 @@ import * as satellite from 'satellite.js'
 
 const EARTH_RADIUS_KM = 6378.137
 const SCENE_RADIUS = 5 // must match Earth sphere radius
-const ORBIT_POINTS = 200 // more points for smoother gradient
+// const ORBIT_POINTS = 200 // more points for smoother gradient
 
 // 弧线插值函数，用于拟合缺失的轨道点
 function interpolateArcPoints(points: THREE.Vector3[], targetCount: number): THREE.Vector3[] {
@@ -56,7 +56,7 @@ function fillMissingPointsWithPreviousOrbit(
   // 将上一圈的数据按比例混合到当前轨道中
   const result: THREE.Vector3[] = []
   const currentRatio = currentPoints.length / targetCount
-  const previousRatio = 1 - currentRatio
+  // const previousRatio = 1 - currentRatio
   
   for (let i = 0; i < targetCount; i++) {
     const currentIndex = Math.floor((i / targetCount) * currentPoints.length)
@@ -89,7 +89,7 @@ const CurveLine: React.FC<{
   transparent: boolean
   opacity: number
 }> = ({ points, color, lineWidth, transparent, opacity }) => {
-  const curveRef = useRef<THREE.Line>(null)
+  // const curveRef = useRef<THREE.Mesh>(null)
   
   const curveGeometry = useMemo(() => {
     if (points.length < 3) return null
@@ -121,7 +121,7 @@ const CurveLine: React.FC<{
   if (!curveGeometry) return null
   
   return (
-    <line ref={curveRef} geometry={curveGeometry} material={curveMaterial} />
+    <primitive object={new THREE.Line(curveGeometry, curveMaterial)} />
   )
 }
 
@@ -242,6 +242,7 @@ const SatelliteOrbit56309: React.FC = () => {
   })
 
   // Calculate which part of the orbit the satellite has passed
+  /*
   const findClosestPointIndex = () => {
     if (orbitPoints.length === 0 || !satellitePosition) return 0
     
@@ -258,10 +259,12 @@ const SatelliteOrbit56309: React.FC = () => {
     
     return closestIndex
   }
+  */
 
-  const closestIndex = findClosestPointIndex()
+  // const closestIndex = findClosestPointIndex()
 
   // Create geometries for past and future orbit segments
+  /*
   const futureOrbitGeometry = useMemo(() => {
     if (orbitPoints.length === 0 || !satellitePosition || closestIndex >= orbitPoints.length - 1) return null
     
@@ -291,6 +294,7 @@ const SatelliteOrbit56309: React.FC = () => {
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
     return geometry
   }, [orbitPoints, closestIndex, satellitePosition])
+  */
 
   // Generate orbit points using actual satellite trajectory data
   const orbitLinePoints = useMemo(() => {

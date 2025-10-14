@@ -28,9 +28,7 @@ const Moon: React.FC<MoonProps> = ({
   const moonMaterial = useMemo(() => {
     return new THREE.MeshLambertMaterial({
       color: '#c0c0c0', // 月球灰色
-      emissive: '#202020', // 微弱自发光
-      roughness: 0.9,
-      metalness: 0.1
+      emissive: '#202020' // 微弱自发光
     });
   }, []);
 

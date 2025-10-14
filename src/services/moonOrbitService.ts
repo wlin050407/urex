@@ -240,7 +240,7 @@ export class MoonOrbitCalculator {
   /**
    * 计算速度（简化计算）
    */
-  private calculateVelocity(position: [number, number, number], distance: number, trueAnomaly: number): [number, number, number] {
+  private calculateVelocity(_position: [number, number, number], distance: number, trueAnomaly: number): [number, number, number] {
     // 简化的速度计算
     const speed = Math.sqrt(MOON_ORBITAL_PARAMS.G * MOON_ORBITAL_PARAMS.EARTH_MASS / distance) / 1000; // km/s
     

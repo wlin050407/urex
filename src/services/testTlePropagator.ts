@@ -183,7 +183,7 @@ export async function testTimeSeries() {
   
   try {
     const tleData = createTestTLEData();
-    const propagator = new TLEPropagator(tleData);
+    // const propagator = new TLEPropagator(tleData);
     
     const baseTime = new Date('2024-05-02T12:00:00Z');
     const positions: Array<{ time: Date; lat: number; lon: number }> = [];

@@ -162,7 +162,7 @@ export async function getTLEByNoradId(noradId: string): Promise<TLEData | null> 
     const parsedTLE = parseTLEData(name, line1, line2);
     return parsedTLE;
   } catch (error) {
-    if (error.name === 'AbortError') {
+    if (error instanceof Error && error.name === 'AbortError') {
       console.error(`TLE request timeout for ${noradId}`);
     } else {
       console.error(`Error getting TLE by NORAD ID ${noradId}:`, error);
