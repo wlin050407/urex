@@ -11,13 +11,16 @@ import { latLonAltToScenePosition } from '../utils/coordinateUtils'
 const SCENE_RADIUS = 5 // must match Earth sphere radius
 // const ORBIT_POINTS = 256 // 增加轨道点数确保闭合
 
+// 使用 base URL 以支持 GitHub Pages 子路径部署（如 /urex/）
+const base = import.meta.env.BASE_URL
+
 // 卫星模型路径配置
 const SATELLITE_MODELS = {
-  ISS: '/ISS_stationary.glb',
-  TIANGONG: '/tiangong.glb',
-  HUBBLE: '/hubble.glb',
-  STARLINK: '/starlink.glb',
-  GPS: '/gps_satellite.glb',
+  ISS: `${base}ISS_stationary.glb`,
+  TIANGONG: `${base}tiangong.glb`,
+  HUBBLE: `${base}hubble.glb`,
+  STARLINK: `${base}starlink.glb`,
+  GPS: `${base}gps_satellite.glb`,
 } as const
 
 // 弧线插值函数，用于拟合缺失的轨道点
@@ -553,9 +556,9 @@ const FamousSatellites: React.FC = () => {
 }
 
 export default FamousSatellites
-// 预加载所有卫星 GLB 模型
-useGLTF.preload('/ISS_stationary.glb')
-useGLTF.preload('/tiangong.glb')
-useGLTF.preload('/hubble.glb')
-useGLTF.preload('/starlink.glb')
-useGLTF.preload('/gps_satellite.glb')
+// 预加载所有卫星 GLB 模型（路径已含 base，适配 GitHub Pages）
+useGLTF.preload(SATELLITE_MODELS.ISS)
+useGLTF.preload(SATELLITE_MODELS.TIANGONG)
+useGLTF.preload(SATELLITE_MODELS.HUBBLE)
+useGLTF.preload(SATELLITE_MODELS.STARLINK)
+useGLTF.preload(SATELLITE_MODELS.GPS)

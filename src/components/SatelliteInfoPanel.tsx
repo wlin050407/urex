@@ -6,6 +6,9 @@ import { useTranslation } from '../i18n/useTranslation'
 import { getFamousSatellitesTLE, TLEData } from '../services/celestrakService'
 import * as satellite from 'satellite.js'
 
+// 使用 base URL 以支持 GitHub Pages 子路径部署（如 /urex/）
+const base = import.meta.env.BASE_URL
+
 // Satellite data interface matching the spec
 interface SatelliteData {
   id: string
@@ -215,22 +218,22 @@ const SatelliteInfoPanel: React.FC = () => {
     let modelUrl: string | null = null
     switch (tle.name) {
       case 'ISS (ZARYA)':
-        modelUrl = '/ISS_stationary.glb'
+        modelUrl = `${base}ISS_stationary.glb`
         break
       case 'TIANGONG SPACE STATION':
       case 'CSS (TIANHE)':
-        modelUrl = '/tiangong.glb'
+        modelUrl = `${base}tiangong.glb`
         break
       case 'HUBBLE SPACE TELESCOPE':
       case 'HST':
-        modelUrl = '/hubble.glb'
+        modelUrl = `${base}hubble.glb`
         break
       case 'STARLINK-1234':
-        modelUrl = '/starlink.glb'
+        modelUrl = `${base}starlink.glb`
         break
       case 'GPS III SV01':
       case 'NAVSTAR 65 (USA 213)':
-        modelUrl = '/gps_satellite.glb'
+        modelUrl = `${base}gps_satellite.glb`
         break
       case 'LUMELITE-4':
         modelUrl = null
@@ -285,22 +288,22 @@ const SatelliteInfoPanel: React.FC = () => {
         let modelUrl: string | null = null
         switch (tle.name) {
           case 'ISS (ZARYA)':
-            modelUrl = '/ISS_stationary.glb'
+            modelUrl = `${base}ISS_stationary.glb`
             break
           case 'TIANGONG SPACE STATION':
           case 'CSS (TIANHE)':
-            modelUrl = '/tiangong.glb'
+            modelUrl = `${base}tiangong.glb`
             break
           case 'HUBBLE SPACE TELESCOPE':
           case 'HST':
-            modelUrl = '/hubble.glb'
+            modelUrl = `${base}hubble.glb`
             break
           case 'STARLINK-1234':
-            modelUrl = '/starlink.glb'
+            modelUrl = `${base}starlink.glb`
             break
           case 'GPS III SV01':
           case 'NAVSTAR 65 (USA 213)':
-            modelUrl = '/gps_satellite.glb'
+            modelUrl = `${base}gps_satellite.glb`
             break
           case 'LUMELITE-4':
             modelUrl = null
@@ -605,10 +608,10 @@ const SatelliteInfoPanel: React.FC = () => {
   )
 }
 
-// 预加载所有卫星 GLB 模型
-useGLTF.preload('/ISS_stationary.glb')
-useGLTF.preload('/tiangong.glb')
-useGLTF.preload('/hubble.glb')
-useGLTF.preload('/starlink.glb')
-useGLTF.preload('/gps_satellite.glb')
+// 预加载所有卫星 GLB 模型（路径已含 base，适配 GitHub Pages）
+useGLTF.preload(`${base}ISS_stationary.glb`)
+useGLTF.preload(`${base}tiangong.glb`)
+useGLTF.preload(`${base}hubble.glb`)
+useGLTF.preload(`${base}starlink.glb`)
+useGLTF.preload(`${base}gps_satellite.glb`)
 export default SatelliteInfoPanel
