@@ -25,12 +25,21 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18
+          cache: 'npm'
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Build
         run: npm run build
+
+      - name: Verify bundle has /urex/ asset paths
+        run: |
+          if ! grep -q 'urex/' dist/assets/*.js; then
+            echo "ERROR: Built JS does not contain /urex/ - asset paths will 404 on GitHub Pages"
+            exit 1
+          fi
+          echo "OK: Bundle contains /urex/ paths"
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
