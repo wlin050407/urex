@@ -1,31 +1,36 @@
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls, Stars } from '@react-three/drei'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
+import type { OrbitControls as OrbitControlsType } from 'three-stdlib'
 import Earth from './components/Earth'
 import ECIAxes from './components/ECIAxes'
 import TimeControlPanel from './components/TimeControlPanel'
-import { TranslationProvider, useTranslation } from './i18n/useTranslation'
+import { TranslationProvider } from './i18n/useTranslation'
 import SunLight from './components/SunLight'
 import Moon from './components/Moon'
 import MoonInfoPanel from './components/MoonInfoPanel'
 import SatelliteInfoPanel from './components/SatelliteInfoPanel'
-import LanguageToggle from './components/LanguageToggle'
+// import LanguageToggle from './components/LanguageToggle'
+import FloatingQuickActions from './components/FloatingQuickActions'
+import CameraController from './components/CameraController'
 
 
 
 // import { SunDirectionTest } from './components/SunDirectionTest'
 
 const AppContent = () => {
-  const { t } = useTranslation()
-  
-  // 临时控制其他卫星显示的按钮
-  const [showOtherSatellites, setShowOtherSatellites] = useState(false)
+  // 临时控制其他卫星显示的按钮 - 默认显示所有卫星
+  const [showOtherSatellites] = useState(true)
   // 控制月球显示的按钮
-  const [showMoon, setShowMoon] = useState(true)
+  const [showMoon] = useState(true)
   // 控制月球信息面板显示
   const [showMoonInfo, setShowMoonInfo] = useState(false)
   // 控制卫星信息面板显示
-  const [showSatelliteInfo, setShowSatelliteInfo] = useState(true)
+  const [showSatelliteInfo] = useState(true)
+  // OrbitControls 引用
+  const controlsRef = useRef<OrbitControlsType>(null)
+  // 显示/隐藏 ECI 轴 - 默认隐藏
+  const [showECIAxes, setShowECIAxes] = useState(false)
 
   return (
     <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
@@ -34,13 +39,10 @@ const AppContent = () => {
         <TimeControlPanel />
       </div>
 
-      {/* 语言切换按钮 */}
-      <div style={{ position: 'absolute', top: 20, left: '50%', transform: 'translateX(-50%)', zIndex: 1000 }}>
-        <LanguageToggle />
-      </div>
+      {/* 顶部语言切换已移除，改为右下角快捷按钮 */}
 
-      {/* 控制按钮 */}
-      <div style={{
+      {/* 控制按钮 - 已隐藏调试面板 */}
+      {/* <div style={{
         position: 'absolute',
         top: '20px',
         right: '400px',
@@ -110,7 +112,7 @@ const AppContent = () => {
         >
           {showSatelliteInfo ? t.hideSatelliteInfo : t.showSatelliteInfo}
         </button>
-      </div>
+      </div> */}
         
         {/* 太阳方向测试面板 */}
         {/* <SunDirectionTest /> */}
@@ -140,7 +142,7 @@ const AppContent = () => {
           {showMoon && <Moon showOrbit={true} showLabels={true} showMoonPhase={true} />}
 
           {/* ECI三轴 */}
-          <ECIAxes length={8} />
+          {showECIAxes && <ECIAxes length={8} />}
 
           {/* 星空背景 */}
           <Stars 
@@ -155,14 +157,18 @@ const AppContent = () => {
 
           {/* 相机控制 */}
           <OrbitControls
+            ref={controlsRef}
             enablePan={true}
             enableZoom={true}
             enableRotate={true}
-            minDistance={8}
+            minDistance={2}
             maxDistance={100}
             autoRotate={false}
             autoRotateSpeed={0.5}
           />
+
+          {/* 相机聚焦控制器 */}
+          <CameraController controlsRef={controlsRef} />
         </Canvas>
 
         {/* 月球信息面板 */}
@@ -173,6 +179,12 @@ const AppContent = () => {
 
       {/* 卫星信息面板 */}
       {showSatelliteInfo && <SatelliteInfoPanel />}
+
+      {/* 右下角快捷功能区 */}
+      <FloatingQuickActions 
+        onToggleAxes={() => setShowECIAxes(!showECIAxes)} 
+        axesVisible={showECIAxes}
+      />
     </div>
   )
 }

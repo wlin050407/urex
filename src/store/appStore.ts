@@ -119,7 +119,10 @@ export const useAppStore = create<AppState>((set, get) => ({
   }),
   
   // 相机控制
-  setFocusedSatellite: (id) => set({ focusedSatellite: id }),
+  setFocusedSatellite: (id) => {
+    console.log('🎯 setFocusedSatellite called with:', id)
+    set({ focusedSatellite: id })
+  },
   setFollowedSatellite: (id) => set({ followedSatellite: id }),
   
   // 轨道显示控制

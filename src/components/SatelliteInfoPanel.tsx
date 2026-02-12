@@ -1,4 +1,6 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, Suspense } from 'react'
+import { Canvas } from '@react-three/fiber'
+import { useGLTF, OrbitControls } from '@react-three/drei'
 import { useAppStore } from '../store/appStore'
 import { useTranslation } from '../i18n/useTranslation'
 import { getFamousSatellitesTLE, TLEData } from '../services/celestrakService'
@@ -28,6 +30,87 @@ const GlobeIcon: React.FC<{ size?: number }> = ({ size = 80 }) => (
     <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
   </svg>
 )
+
+// 3D 模型加载组件
+const ModelViewer: React.FC<{ modelUrl: string; satelliteName?: string }> = ({ modelUrl, satelliteName }) => {
+  const { scene } = useGLTF(modelUrl)
+  
+  // 根据卫星类型设置不同的缩放比例
+  let scale = 0.03 // 默认缩放
+  if (satelliteName) {
+    switch (satelliteName) {
+      case 'HUBBLE SPACE TELESCOPE':
+      case 'HST':
+        scale = 0.08
+        break
+      case 'STARLINK-1234':
+        scale = 0.05
+        break
+      case 'TIANGONG SPACE STATION':
+      case 'CSS (TIANHE)':
+        scale = 0.3
+        break
+      case 'ISS (ZARYA)':
+        scale = 0.02
+        break
+      case 'GPS III SV01':
+      case 'NAVSTAR 65 (USA 213)':
+        scale = 0.0001
+        break
+      default:
+        scale = 0.03
+    }
+  }
+  
+  // 根据卫星类型设置不同的位置偏移
+  let positionY = 0 // 默认位置
+  if (satelliteName) {
+    switch (satelliteName) {
+      case 'STARLINK-1234':
+        positionY = -0.5 // 往下移动更多
+        break
+      case 'HUBBLE SPACE TELESCOPE':
+      case 'HST':
+        positionY = -0.3 // 往下移动
+        break
+      default:
+        positionY = 0
+    }
+  }
+  
+  return (
+    <primitive 
+      object={scene.clone()} 
+      scale={[scale, scale, scale]} 
+      position={[0, positionY, 0]}
+    />
+  )
+}
+
+// 3D 模型查看器组件
+const Model3DViewer: React.FC<{ modelUrl: string; satelliteName?: string }> = ({ modelUrl, satelliteName }) => {
+  
+  return (
+    <Canvas
+      camera={{ position: [0, 0, 2], fov: 50 }}
+      style={{ width: '100%', height: '100%', background: 'transparent' }}
+    >
+      <ambientLight intensity={0.5} />
+      <directionalLight position={[5, 5, 5]} intensity={1} />
+      <Suspense fallback={<div style={{color: 'white', textAlign: 'center'}}>Loading...</div>}>
+        <ModelViewer modelUrl={modelUrl} satelliteName={satelliteName} />
+      </Suspense>
+      <OrbitControls 
+        enableZoom={false} 
+        enablePan={false}
+        enableRotate={true}
+        autoRotate={false}
+        rotateSpeed={1}
+        dampingFactor={0.05}
+      />
+    </Canvas>
+  )
+}
 
 // Star icon component for favorites
 const StarIcon: React.FC<{ filled?: boolean; onClick?: (e: React.MouseEvent) => void; size?: number }> = ({ 
@@ -68,6 +151,7 @@ const SatelliteInfoPanel: React.FC = () => {
   const [satellites, setSatellites] = useState<Record<string, SatelliteData>>({})
   const [tleData, setTleData] = useState<Record<string, TLEData>>({})
   const [loading, setLoading] = useState(true)
+  const [isCollapsed, setIsCollapsed] = useState(false)
 
   // Fetch satellite TLE data
   useEffect(() => {
@@ -237,9 +321,12 @@ const SatelliteInfoPanel: React.FC = () => {
   // Handle focus action
   const handleFocus = () => {
     if (selectedSatellite) {
-      setFocusedSatellite(selectedSatellite)
-      // TODO: Implement actual camera focus logic in 3D scene
-      console.log('Focus on satellite:', selectedSatellite)
+      console.log('🎯 Focus button clicked for:', selectedSatellite)
+      // 先清空再设置，确保 useEffect 触发
+      setFocusedSatellite(null)
+      setTimeout(() => {
+        setFocusedSatellite(selectedSatellite)
+      }, 10)
     }
   }
 
@@ -262,10 +349,27 @@ const SatelliteInfoPanel: React.FC = () => {
   }
 
   return (
-    <div className="satellite-info-panel-new">
+    <div className={`satellite-info-panel-new ${isCollapsed ? 'collapsed' : ''}`}>
       {/* Header */}
       <div className="panel-header-new">
         <h3>{t.satelliteInfo}</h3>
+        <button 
+          className="collapse-btn"
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          title={isCollapsed ? "Expand" : "Collapse"}
+        >
+          {isCollapsed ? (
+            // Expand icon (chevron down)
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          ) : (
+            // Collapse icon (chevron up)
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <polyline points="18 15 12 9 6 15"></polyline>
+            </svg>
+          )}
+        </button>
       </div>
 
       <div className="panel-content-new">
@@ -446,4 +550,10 @@ const SatelliteInfoPanel: React.FC = () => {
   )
 }
 
+// 预加载所有卫星 GLB 模型
+useGLTF.preload('/ISS_stationary.glb')
+useGLTF.preload('/tiangong.glb')
+useGLTF.preload('/hubble.glb')
+useGLTF.preload('/starlink.glb')
+useGLTF.preload('/gps_satellite.glb')
 export default SatelliteInfoPanel

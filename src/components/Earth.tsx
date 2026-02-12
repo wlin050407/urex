@@ -2,7 +2,6 @@ import React, { useRef, useMemo } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useAppStore } from '../store/appStore'
-import { Line, Text } from '@react-three/drei'
 import Satellite56309 from './Satellite56309'
 import SatelliteOrbit56309 from './SatelliteOrbit56309'
 import FamousSatellites from './FamousSatellites'
@@ -116,11 +115,11 @@ const Earth: React.FC<EarthProps> = ({ showOtherSatellites }) => {
           <primitive object={shaderMaterial} attach="material" />
         </mesh>
 
-        {/* Prime meridian axis */}
-        <Line points={[[0, 0, 0], [5.8, 0, 0]]} color="#00ff00" lineWidth={3} />
+        {/* Prime meridian axis - 默认隐藏 */}
+        {/* <Line points={[[0, 0, 0], [5.8, 0, 0]]} color="#00ff00" lineWidth={3} />
         <Text position={[6.2, 0, 0]} fontSize={0.5} color="#00ff00" anchorX="center" anchorY="middle">
           Lon 0°
-        </Text>
+        </Text> */}
 
         {/* Clouds */}
         <mesh ref={cloudsRef}>

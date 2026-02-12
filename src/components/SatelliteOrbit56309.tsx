@@ -6,9 +6,8 @@ import { useAppStore } from '../store/appStore'
 import { getTargetSatelliteTLE } from '../services/celestrakService'
 import { createSatrecFromTLE } from '../services/sgp4Service'
 import * as satellite from 'satellite.js'
+import { latLonAltToScenePosition } from '../utils/coordinateUtils'
 
-const EARTH_RADIUS_KM = 6378.137
-const SCENE_RADIUS = 5 // must match Earth sphere radius
 // const ORBIT_POINTS = 200 // more points for smoother gradient
 
 // 弧线插值函数，用于拟合缺失的轨道点
@@ -127,7 +126,6 @@ const CurveLine: React.FC<{
 
 const SatelliteOrbit56309: React.FC = () => {
   const { getCurrentEffectiveTime } = useAppStore()
-  const scaleKmToScene = useMemo(() => SCENE_RADIUS / EARTH_RADIUS_KM, [])
   const [orbitPoints, setOrbitPoints] = useState<THREE.Vector3[]>([])
   const [satrec, setSatrec] = useState<any>(null)
   const [satellitePosition, setSatellitePosition] = useState<THREE.Vector3 | null>(null)
@@ -161,17 +159,19 @@ const SatelliteOrbit56309: React.FC = () => {
     const currentTime = getCurrentEffectiveTime()
     
     try {
-      // Calculate current satellite position
+      // Calculate current satellite position using lat/lon method
       const pv = satellite.propagate(satrec, currentTime)
-      if (pv && pv.position) {
+      if (pv && pv.position && typeof pv.position !== 'boolean') {
         const gmst = satellite.gstime(currentTime)
-        const ecf = satellite.eciToEcf(pv.position, gmst)
+        const positionGd = satellite.eciToGeodetic(pv.position, gmst)
         
-        const x = ecf.x * scaleKmToScene
-        const y = ecf.z * scaleKmToScene  // ECF Z -> Scene Y
-        const z = -ecf.y * scaleKmToScene // ECF Y -> -Scene Z
+        const latDeg = positionGd.latitude * (180 / Math.PI)
+        const lonDeg = positionGd.longitude * (180 / Math.PI)
+        const altKm = positionGd.height
         
-        setSatellitePosition(new THREE.Vector3(x, y, z))
+        const scenePos = latLonAltToScenePosition(latDeg, lonDeg, altKm)
+        
+        setSatellitePosition(scenePos)
       }
       
       // 超高频轨道更新 - 每帧都更新，最大化丝滑度
@@ -191,26 +191,32 @@ const SatelliteOrbit56309: React.FC = () => {
         lastUpdateTime.current = now
         lastTimeSpeed.current = timeSpeed
         
-        // 计算轨道点 - 使用最少的点数，最大化更新频率
+        // 计算轨道点：用ECI生成光滑椭圆，然后用当前时刻的GMST统一转换
         const rawPoints: THREE.Vector3[] = []
         const orbitalPeriodMinutes = (2 * Math.PI) / satrec.no
-        const orbitPointCount = 60 // 最少的点数，确保丝滑度
+        const orbitPointCount = 60 // 恢复原来的点数
         const timeStep = (orbitalPeriodMinutes * 60 * 1000) / orbitPointCount
+        
+        // 关键：使用当前时刻的GMST对所有轨道点进行转换
+        const currentGmst = satellite.gstime(currentTime)
         
         for (let i = 0; i < orbitPointCount; i++) {
           const time = new Date(currentTime.getTime() + i * timeStep)
           
           try {
             const pv = satellite.propagate(satrec, time)
-            if (pv && pv.position) {
-              // 关键修改：使用ECI坐标而不是ECF坐标
-              // ECI坐标是惯性坐标系，不会随地球自转而变化
-              // 这样轨道就是真正的轨道，而不是相对于地球表面的固定路径
-              const x = pv.position.x * scaleKmToScene
-              const y = pv.position.z * scaleKmToScene  // ECI Z -> Scene Y
-              const z = -pv.position.y * scaleKmToScene // ECI Y -> -Scene Z
+            if (pv && pv.position && typeof pv.position !== 'boolean') {
+              // 用ECI生成轨道（保持光滑椭圆形状）
+              // 用当前时刻的GMST转换（所有点用同一个GMST）
+              const positionGd = satellite.eciToGeodetic(pv.position, currentGmst)
+              
+              const latDeg = positionGd.latitude * (180 / Math.PI)
+              const lonDeg = positionGd.longitude * (180 / Math.PI)
+              const altKm = positionGd.height
+              
+              const scenePos = latLonAltToScenePosition(latDeg, lonDeg, altKm)
 
-              rawPoints.push(new THREE.Vector3(x, y, z))
+              rawPoints.push(scenePos)
             }
           } catch (error) {
             console.error('Orbit point calculation error:', error)

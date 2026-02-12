@@ -1,15 +1,24 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
-// import { Line } from '@react-three/drei'
+import { useGLTF, Text, Billboard } from '@react-three/drei'
 import * as THREE from 'three'
 import { useAppStore } from '../store/appStore'
 import { getFamousSatellitesTLE, FAMOUS_SATELLITES } from '../services/celestrakService'
 import { createSatrecFromTLE } from '../services/sgp4Service'
 import * as satelliteJS from 'satellite.js'
+import { latLonAltToScenePosition } from '../utils/coordinateUtils'
 
-const EARTH_RADIUS_KM = 6378.137
 const SCENE_RADIUS = 5 // must match Earth sphere radius
 // const ORBIT_POINTS = 256 // 增加轨道点数确保闭合
+
+// 卫星模型路径配置
+const SATELLITE_MODELS = {
+  ISS: '/ISS_stationary.glb',
+  TIANGONG: '/tiangong.glb',
+  HUBBLE: '/hubble.glb',
+  STARLINK: '/starlink.glb',
+  GPS: '/gps_satellite.glb',
+} as const
 
 // 弧线插值函数，用于拟合缺失的轨道点
 function interpolateArcPoints(points: THREE.Vector3[], targetCount: number): THREE.Vector3[] {
@@ -127,12 +136,11 @@ const CurveLine: React.FC<{
 
 // 卫星配置
 const SATELLITE_CONFIGS = {
-  LUMELITE4: { color: '#ffff00', name: 'LUMELITE-4', size: 0.08 },
-  ISS: { color: '#00ff00', name: 'ISS', size: 0.12 },
-  HUBBLE: { color: '#ff8800', name: 'HUBBLE', size: 0.10 },
-  STARLINK: { color: '#0088ff', name: 'STARLINK', size: 0.06 },
-  TIANGONG: { color: '#ff0088', name: 'TIANGONG', size: 0.11 },
-  GPS: { color: '#88ff00', name: 'GPS', size: 0.09 },
+  ISS: { color: '#00ff00', name: 'ISS', size: 0.12, hasModel: true, modelPath: SATELLITE_MODELS.ISS }, // 绿色
+  HUBBLE: { color: '#ff8800', name: 'HUBBLE', size: 0.10, hasModel: true, modelPath: SATELLITE_MODELS.HUBBLE }, // 橙色
+  STARLINK: { color: '#0088ff', name: 'STARLINK', size: 0.06, hasModel: true, modelPath: SATELLITE_MODELS.STARLINK }, // 蓝色
+  TIANGONG: { color: '#ff0088', name: 'TIANGONG', size: 0.11, hasModel: true, modelPath: SATELLITE_MODELS.TIANGONG }, // 粉色
+  GPS: { color: '#00ffff', name: 'GPS', size: 0.09, hasModel: true, modelPath: SATELLITE_MODELS.GPS }, // 青色 - 使用模型
 } as const;
 
 type SatelliteName = keyof typeof SATELLITE_CONFIGS;
@@ -145,37 +153,70 @@ interface SatelliteData {
   config: typeof SATELLITE_CONFIGS[SatelliteName];
 }
 
+// GLB 模型加载组件
+const SatelliteModel: React.FC<{
+  modelPath: string;
+  scale: number;
+}> = ({ modelPath, scale }) => {
+  const { scene } = useGLTF(modelPath)
+  
+  return (
+    <group scale={[scale, scale, scale]}>
+      <primitive object={scene.clone()} />
+    </group>
+  )
+}
+
+import { isOccludedByEarth } from '../utils/occlusion'
+
 const SingleSatellite: React.FC<{ 
   satellite: SatelliteData;
   orbitPoints: THREE.Vector3[];
 }> = ({ satellite, orbitPoints }) => {
   const meshRef = useRef<THREE.Group>(null)
+  const labelRef = useRef<any>(null)
   const { getCurrentEffectiveTime } = useAppStore()
-  const scaleKmToScene = useMemo(() => SCENE_RADIUS / EARTH_RADIUS_KM, [])
 
-  useFrame(() => {
+  useFrame(({ camera }) => {
     if (!meshRef.current || !satellite.satrec) return
     
     const t = getCurrentEffectiveTime()
 
     try {
       const pv = satelliteJS.propagate(satellite.satrec, t)
-      if (!pv || !pv.position || pv.position.x === undefined) return
+      if (!pv || !pv.position || typeof pv.position === 'boolean') return
 
-      // 关键修改：卫星位置也使用ECI坐标，与轨道计算保持一致
-      // 这样卫星位置和轨道都在同一个坐标系中
-      const x = pv.position.x * scaleKmToScene
-      const y = pv.position.z * scaleKmToScene  // ECI Z → Scene Y
-      const z = -pv.position.y * scaleKmToScene // ECI Y → -Scene Z
-
-      // 检查坐标是否为有效数字
-      if (isNaN(x) || isNaN(y) || isNaN(z) || !isFinite(x) || !isFinite(y) || !isFinite(z)) {
-        console.warn(`Invalid satellite position for ${satellite.name}:`, { x, y, z })
+      // 使用经纬度定位方法：将ECI坐标转换为地理坐标，再转换为场景坐标
+      const positionEci = pv.position
+      const gmst = satelliteJS.gstime(t)
+      const positionGd = satelliteJS.eciToGeodetic(positionEci, gmst)
+      
+      // 转换为度
+      const latDeg = positionGd.latitude * (180 / Math.PI)
+      const lonDeg = positionGd.longitude * (180 / Math.PI)
+      const altKm = positionGd.height
+      
+      // 检查坐标是否有效
+      if (isNaN(latDeg) || isNaN(lonDeg) || isNaN(altKm) || !isFinite(latDeg) || !isFinite(lonDeg) || !isFinite(altKm)) {
+        console.warn(`Invalid geodetic position for ${satellite.name}:`, { latDeg, lonDeg, altKm })
         return
       }
+      
+      // 转换为场景坐标（相对于地球表面的固定位置）
+      // 卫星在地球的旋转group内部，会自动随地球旋转
+      const scenePos = latLonAltToScenePosition(latDeg, lonDeg, altKm)
+      
+      // 设置卫星位置
+      meshRef.current.position.copy(scenePos)
 
-      // 直接设置位置，不使用插值，确保与轨道计算完全同步
-      meshRef.current.position.set(x, y, z)
+      // 更新标签朝向摄像机，并处理遮挡可见性
+      if (labelRef.current) {
+        // 可见性：被地球遮挡则隐藏（朝向由 Billboard 保证）
+        const cameraPos = new THREE.Vector3().copy(camera.position)
+        const worldSatPos = new THREE.Vector3().copy(meshRef.current.getWorldPosition(new THREE.Vector3()))
+        const occluded = isOccludedByEarth(cameraPos, worldSatPos, SCENE_RADIUS * 0.99)
+        labelRef.current.visible = !occluded
+      }
       
       // 调试信息：每5秒输出一次位置信息
       if (Math.floor(t.getTime() / 5000) % 2 === 0 && Math.floor(t.getTime() / 1000) % 5 === 0) {
@@ -194,32 +235,67 @@ const SingleSatellite: React.FC<{
     <group>
       {/* Satellite marker */}
       <group ref={meshRef}>
-        {/* Main satellite body */}
-        <mesh>
-          <sphereGeometry args={[satellite.config.size * 0.8, 12, 12]} />
-          <meshBasicMaterial color={satellite.config.color} />
-        </mesh>
-        
-        {/* Glow effect */}
-        <mesh>
-          <sphereGeometry args={[satellite.config.size * 1.2, 8, 8]} />
-          <meshBasicMaterial 
-            color={satellite.config.color} 
-            transparent 
-            opacity={0.2}
-          />
-        </mesh>
-        
-        {/* Outer ring for visibility */}
-        <mesh>
-          <ringGeometry args={[satellite.config.size * 1.5, satellite.config.size * 1.8, 16]} />
-          <meshBasicMaterial 
-            color={satellite.config.color} 
-            transparent 
-            opacity={0.4}
-            side={THREE.DoubleSide}
-          />
-        </mesh>
+        {satellite.config.hasModel && satellite.config.modelPath ? (
+          // 使用 GLB 模型替换小球
+          <>
+            {console.log(`🔍 ${satellite.name} hasModel:`, satellite.config.hasModel, 'modelPath:', satellite.config.modelPath)}
+            <SatelliteModel 
+              modelPath={satellite.config.modelPath}
+              scale={satellite.config.size * (
+                satellite.name === 'TIANGONG' ? 0.5 : 
+                satellite.name === 'HUBBLE' ? 0.25 : 
+                satellite.name === 'STARLINK' ? 0.2 :
+                satellite.name === 'ISS' ? 0.025 :
+                satellite.name === 'GPS' ? 0.0002 : 0.02
+              )}
+            />
+          </>
+        ) : (
+          // 使用默认几何体（小球）
+          <>
+            {/* Main satellite body */}
+            <mesh>
+              <sphereGeometry args={[satellite.config.size * 0.8, 12, 12]} />
+              <meshBasicMaterial color={satellite.config.color} />
+            </mesh>
+            
+            {/* Glow effect */}
+            <mesh>
+              <sphereGeometry args={[satellite.config.size * 1.2, 8, 8]} />
+              <meshBasicMaterial 
+                color={satellite.config.color} 
+                transparent 
+                opacity={0.2}
+              />
+            </mesh>
+            
+            {/* Outer ring for visibility */}
+            <mesh>
+              <ringGeometry args={[satellite.config.size * 1.5, satellite.config.size * 1.8, 16]} />
+              <meshBasicMaterial 
+                color={satellite.config.color} 
+                transparent 
+                opacity={0.4}
+                side={THREE.DoubleSide}
+              />
+            </mesh>
+          </>
+        )}
+        {/* Billboard label - 总是面向屏幕 */}
+        <group ref={labelRef} position={[0.18, 0.22, 0]}>
+          <Billboard follow={true} lockX={false} lockY={false} lockZ={false}>
+            <Text
+              fontSize={0.16}
+              color={satellite.config.color}
+              anchorX="left"
+              anchorY="bottom"
+              outlineWidth={0.012}
+              outlineColor="#000000"
+            >
+              {satellite.name}
+            </Text>
+          </Billboard>
+        </group>
       </group>
 
       {/* Orbit path - 使用曲线渲染 */}
@@ -241,7 +317,6 @@ const FamousSatellites: React.FC = () => {
   const [orbitData, setOrbitData] = useState<Map<string, THREE.Vector3[]>>(new Map())
   const [isLoading, setIsLoading] = useState(true)
   const { getCurrentEffectiveTime } = useAppStore()
-  const scaleKmToScene = useMemo(() => SCENE_RADIUS / EARTH_RADIUS_KM, [])
   const lastOrbitUpdate = useRef<number>(0)
   const lastTimeSpeed = useRef<number>(1)
   const orbitCache = useRef<Map<string, { time: number, points: THREE.Vector3[] }>>(new Map())
@@ -263,7 +338,15 @@ const FamousSatellites: React.FC = () => {
         const loadedSatellites: SatelliteData[] = []
         
         for (const [name, tle] of Object.entries(tleData)) {
+          // 排除 LUMELITE4，因为它已经在 Earth.tsx 中单独渲染
+          if (name === 'LUMELITE4') {
+            console.log(`⚠️ Skipping LUMELITE4: already rendered separately via Satellite56309`)
+            continue
+          }
+          
           console.log(`🔍 Processing ${name}:`, tle ? 'TLE exists' : 'No TLE')
+          console.log(`🔍 Available configs:`, Object.keys(SATELLITE_CONFIGS))
+          console.log(`🔍 Is ${name} in configs?`, name in SATELLITE_CONFIGS)
           if (tle && name in SATELLITE_CONFIGS) {
             try {
               const satrec = createSatrecFromTLE(tle)
@@ -357,9 +440,13 @@ const FamousSatellites: React.FC = () => {
           return
         }
         
-        // 计算轨道上的点，使用较少的点数提高性能
-        const orbitPointCount = 80 // 减少点数，提高更新频率
+        // 计算轨道上的点：用ECI生成光滑椭圆，然后用当前时刻的GMST统一转换
+        const orbitPointCount = 80 // 恢复原来的点数，因为ECI轨道本身就很平滑
         const rawPoints: THREE.Vector3[] = []
+        
+        // 关键：使用当前时刻的GMST对所有轨道点进行转换
+        // 这样保持了ECI轨道的光滑形状，同时固定在地球表面
+        const currentGmst = satelliteJS.gstime(currentTime)
         
         for (let i = 0; i < orbitPointCount; i++) {
           const fraction = i / orbitPointCount
@@ -373,28 +460,35 @@ const FamousSatellites: React.FC = () => {
           }
           
           const pv = satelliteJS.propagate(satellite.satrec, time)
-          if (!pv || !pv.position || pv.position.x === undefined) continue
+          if (!pv || !pv.position || typeof pv.position === 'boolean') continue
 
-          // 关键修改：使用ECI坐标而不是ECF坐标
-          // ECI坐标是惯性坐标系，不会随地球自转而变化
-          // 这样轨道就是真正的轨道，而不是相对于地球表面的固定路径
-          const x = pv.position.x * scaleKmToScene
-          const y = pv.position.z * scaleKmToScene  // ECI Z → Scene Y
-          const z = -pv.position.y * scaleKmToScene // ECI Y → -Scene Z
+          // 用ECI生成轨道（保持光滑椭圆形状）
+          const positionEci = pv.position
+          
+          // 用当前时刻的GMST转换为geodetic（所有点用同一个GMST）
+          // 这样保持了轨道的形状，同时固定在地球表面
+          const positionGd = satelliteJS.eciToGeodetic(positionEci, currentGmst)
+          
+          const latDeg = positionGd.latitude * (180 / Math.PI)
+          const lonDeg = positionGd.longitude * (180 / Math.PI)
+          const altKm = positionGd.height
 
           // 检查坐标是否为有效数字
-          if (isNaN(x) || isNaN(y) || isNaN(z) || !isFinite(x) || !isFinite(y) || !isFinite(z)) {
-            console.warn(`Invalid coordinates for ${satellite.name} at time ${time.toISOString()}:`, { x, y, z, pv })
+          if (isNaN(latDeg) || isNaN(lonDeg) || isNaN(altKm) || !isFinite(latDeg) || !isFinite(lonDeg) || !isFinite(altKm)) {
+            console.warn(`Invalid geodetic coordinates for ${satellite.name} at time ${time.toISOString()}:`, { latDeg, lonDeg, altKm })
             continue
           }
           
-          // 检查坐标是否在合理范围内（避免过大的值）
-          if (Math.abs(x) > 50 || Math.abs(y) > 50 || Math.abs(z) > 50) {
-            console.warn(`Coordinates out of range for ${satellite.name}:`, { x, y, z })
+          // 转换为场景坐标
+          const scenePos = latLonAltToScenePosition(latDeg, lonDeg, altKm)
+          
+          // 检查坐标是否在合理范围内
+          if (Math.abs(scenePos.x) > 50 || Math.abs(scenePos.y) > 50 || Math.abs(scenePos.z) > 50) {
+            console.warn(`Coordinates out of range for ${satellite.name}:`, { x: scenePos.x, y: scenePos.y, z: scenePos.z })
             continue
           }
 
-          rawPoints.push(new THREE.Vector3(x, y, z))
+          rawPoints.push(scenePos)
         }
         
         // 使用上一圈的数据拟合缺失的点，确保轨道是平滑的弧线
@@ -459,3 +553,9 @@ const FamousSatellites: React.FC = () => {
 }
 
 export default FamousSatellites
+// 预加载所有卫星 GLB 模型
+useGLTF.preload('/ISS_stationary.glb')
+useGLTF.preload('/tiangong.glb')
+useGLTF.preload('/hubble.glb')
+useGLTF.preload('/starlink.glb')
+useGLTF.preload('/gps_satellite.glb')
