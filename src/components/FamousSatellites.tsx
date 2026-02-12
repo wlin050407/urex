@@ -220,7 +220,7 @@ const SingleSatellite: React.FC<{
       
       // 调试信息：每5秒输出一次位置信息
       if (Math.floor(t.getTime() / 5000) % 2 === 0 && Math.floor(t.getTime() / 1000) % 5 === 0) {
-        console.log(`🛰️ ${satellite.name} ECI position:`, { x: x.toFixed(3), y: y.toFixed(3), z: z.toFixed(3), time: t.toISOString() })
+        console.log(`🛰️ ${satellite.name} scene position:`, { x: scenePos.x.toFixed(3), y: scenePos.y.toFixed(3), z: scenePos.z.toFixed(3), time: t.toISOString() })
       }
     } catch (error) {
       console.error(`${satellite.name} position calculation error:`, error)

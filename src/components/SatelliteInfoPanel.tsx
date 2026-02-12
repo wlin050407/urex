@@ -211,6 +211,34 @@ const SatelliteInfoPanel: React.FC = () => {
     const periodMin = (1440 / tle.meanMotion) // Minutes per orbit
     const altitudeKm = calculateAltitude(tle.meanMotion)
     
+    // 为卫星设置对应的模型 URL（LUMELITE-4 强制无模型预览）
+    let modelUrl: string | null = null
+    switch (tle.name) {
+      case 'ISS (ZARYA)':
+        modelUrl = '/ISS_stationary.glb'
+        break
+      case 'TIANGONG SPACE STATION':
+      case 'CSS (TIANHE)':
+        modelUrl = '/tiangong.glb'
+        break
+      case 'HUBBLE SPACE TELESCOPE':
+      case 'HST':
+        modelUrl = '/hubble.glb'
+        break
+      case 'STARLINK-1234':
+        modelUrl = '/starlink.glb'
+        break
+      case 'GPS III SV01':
+      case 'NAVSTAR 65 (USA 213)':
+        modelUrl = '/gps_satellite.glb'
+        break
+      case 'LUMELITE-4':
+        modelUrl = null
+        break
+      default:
+        modelUrl = null
+    }
+
     return {
       id: tle.satelliteId,
       name: tle.name,
@@ -223,7 +251,7 @@ const SatelliteInfoPanel: React.FC = () => {
       latDeg: 0,
       lonDeg: 0,
       status: 'online',
-      modelUrl: null
+      modelUrl
     }
   }
 
@@ -253,6 +281,34 @@ const SatelliteInfoPanel: React.FC = () => {
           velocity = Math.sqrt(vel.x * vel.x + vel.y * vel.y + vel.z * vel.z)
         }
 
+        // 为卫星设置对应的模型 URL（LUMELITE-4 强制无模型预览）
+        let modelUrl: string | null = null
+        switch (tle.name) {
+          case 'ISS (ZARYA)':
+            modelUrl = '/ISS_stationary.glb'
+            break
+          case 'TIANGONG SPACE STATION':
+          case 'CSS (TIANHE)':
+            modelUrl = '/tiangong.glb'
+            break
+          case 'HUBBLE SPACE TELESCOPE':
+          case 'HST':
+            modelUrl = '/hubble.glb'
+            break
+          case 'STARLINK-1234':
+            modelUrl = '/starlink.glb'
+            break
+          case 'GPS III SV01':
+          case 'NAVSTAR 65 (USA 213)':
+            modelUrl = '/gps_satellite.glb'
+            break
+          case 'LUMELITE-4':
+            modelUrl = null
+            break
+          default:
+            modelUrl = null
+        }
+
         return {
           id: tle.satelliteId,
           name: tle.name,
@@ -265,7 +321,7 @@ const SatelliteInfoPanel: React.FC = () => {
           latDeg: positionGd.latitude * (180 / Math.PI),
           lonDeg: positionGd.longitude * (180 / Math.PI),
           status: 'online',
-          modelUrl: null
+          modelUrl
         }
       }
     } catch (error) {
@@ -457,8 +513,7 @@ const SatelliteInfoPanel: React.FC = () => {
               <div className="model-preview-box">
                 {selectedSatData.data.modelUrl ? (
                   <div className="model-3d-viewer">
-                    {/* TODO: Integrate 3D model viewer */}
-                    <div>{t.noModel}</div>
+                    <Model3DViewer modelUrl={selectedSatData.data.modelUrl} satelliteName={selectedSatData.data.name} />
                   </div>
                 ) : (
                   <div className="model-placeholder">
