@@ -7,20 +7,18 @@ import { getFamousSatellitesTLE, FAMOUS_SATELLITES } from '../services/celestrak
 import { createSatrecFromTLE } from '../services/sgp4Service'
 import * as satelliteJS from 'satellite.js'
 import { latLonAltToScenePosition } from '../utils/coordinateUtils'
+import { BASE_URL } from '../config/baseUrl'
 
 const SCENE_RADIUS = 5 // must match Earth sphere radius
 // const ORBIT_POINTS = 256 // 增加轨道点数确保闭合
 
-// 使用 base URL 以支持 GitHub Pages 子路径部署（如 /urex/）
-const base = import.meta.env.BASE_URL
-
-// 卫星模型路径配置
+// 卫星模型路径配置（使用 BASE_URL 适配 GitHub Pages /urex/ 子路径）
 const SATELLITE_MODELS = {
-  ISS: `${base}ISS_stationary.glb`,
-  TIANGONG: `${base}tiangong.glb`,
-  HUBBLE: `${base}hubble.glb`,
-  STARLINK: `${base}starlink.glb`,
-  GPS: `${base}gps_satellite.glb`,
+  ISS: `${BASE_URL}ISS_stationary.glb`,
+  TIANGONG: `${BASE_URL}tiangong.glb`,
+  HUBBLE: `${BASE_URL}hubble.glb`,
+  STARLINK: `${BASE_URL}starlink.glb`,
+  GPS: `${BASE_URL}gps_satellite.glb`,
 } as const
 
 // 弧线插值函数，用于拟合缺失的轨道点

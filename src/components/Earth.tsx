@@ -6,11 +6,11 @@ import Satellite56309 from './Satellite56309'
 import SatelliteOrbit56309 from './SatelliteOrbit56309'
 import FamousSatellites from './FamousSatellites'
 import { calculateSunPosition } from '../services/seasonalSunService'
-
+import { BASE_URL } from '../config/baseUrl'
 
 // Textures
 const DAY_TEXTURE   = 'https://threejs.org/examples/textures/planets/earth_atmos_2048.jpg'
-const NIGHT_TEXTURE = import.meta.env.BASE_URL + 'Earth/night.jpg'
+const NIGHT_TEXTURE = BASE_URL + 'Earth/night.jpg'
 const CLOUD_TEXTURE = 'https://threejs.org/examples/textures/planets/earth_clouds_1024.png'
 
 const vertexShader = `
